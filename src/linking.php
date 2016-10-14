@@ -171,7 +171,7 @@ function RunWorkflow($playreal, $playfab, $device_id, $playreal_user_id, $conten
     $playreal_user = $playreal->Login($playreal_user_id);
     $content = $playfab->GetContent($playfab_user['id']); // This represents the current local content
     if ($playfab_user && $playreal_user) {
-        //-- If PlayFab login success
+        //-- If PlayFab and PlayReal login success
         $linked_playreal_user = $playreal->GetLinkedUser($playfab_user['id']);
         if (empty($linked_playreal_user)) { // If partner id is empty
             //-- So there is no linked PlayReal account to our PlayFab account
@@ -206,11 +206,12 @@ function RunWorkflow($playreal, $playfab, $device_id, $playreal_user_id, $conten
             }
         } else { // $linked_playreal_user is not empty:
             // !!! New code: the PlayReal account should win if it is already link to a PlayFab account. Otherwise it should lose !!!
-            if ($linked_playreal_user['id'] != $playreal_user['id']) {
+            if ($linked_playreal_user['link'] != $playreal_user['link']) {
+                // The two linked PlayFab accounts are different
                 if ($playreal_user['link']) {
                     $playfab_user = $playfab->LoginWithCustomID($playreal_user['id']);  // PlayReal account wins -> switch to its PlayFab account
                 } else {
-                    $playreal_user = $linked_playreal_user; // PlayFab account wins -> change RealReal account
+                    $playreal_user = $linked_playreal_user; // PlayFab account wins -> change PlayReal account
                 }
             } else {
                 // nothing to do, we're already good
