@@ -194,5 +194,61 @@ class FeatureContext implements Context
         Assert::assertEquals('', $this->playfab->GetContent(100000011));
     }
 
+    /**
+     * @Given /^I have a partially linked PlayFab account$/
+     */
+    public function iHaveAPartiallyLinkedPlayFabAccount()
+    {
+        $this->device = 'device_AAAA';
+        $this->playfab->AddRecord(100000004, $this->device, 4, 'content 100000004');
+        $this->original_content = $this->playfab->GetContent(100000004);
+
+        $this->playreal_id = 4;
+        $this->playreal->AddRecord($this->playreal_id, 'Yann', null);
+    }
+
+    /**
+     * @Given /^I have a partially linked PlayReal account$/
+     */
+    public function iHaveAPartiallyLinkedPlayRealAccount()
+    {
+        $this->device = 'device_AAAA';
+        $this->playfab->AddRecord(100000004, $this->device, null, 'content 100000004');
+        $this->original_content = $this->playfab->GetContent(100000004);
+
+        $this->playreal_id = 4;
+        $this->playreal->AddRecord($this->playreal_id, 'Yann', 100000004);
+    }
+
+    /**
+     * @Given /^I have a linked PlayFab account to a badly linked PlayReal account$/
+     */
+    public function iHaveALinkedPlayFabAccountToABadlyLinkedPlayRealAccount()
+    {
+        $this->device = 'device_AAAA';
+        $this->playfab->AddRecord(100000004, $this->device, 4, 'content 100000004');
+        $this->original_content = $this->playfab->GetContent(100000004);
+
+        $this->playfab->AddRecord(100005555, 'device_CCCC', $this->playreal_id, 'content 100005555');
+
+        $this->playreal_id = 4;
+        $this->playreal->AddRecord($this->playreal_id, 'Yann', 100005555);
+    }
+
+    /**
+     * @Given /^I have a linked PlayReal account to a badly linked PlayFab account$/
+     */
+    public function iHaveALinkedPlayRealAccountToABadlyLinkedPlayFabAccount()
+    {
+        $this->device = 'device_AAAA';
+        $this->playfab->AddRecord(100000004, $this->device, 3, 'content 100000004');
+        $this->original_content = $this->playfab->GetContent(100000004);
+
+        $this->playreal_id = 4;
+        $this->playreal->AddRecord($this->playreal_id, 'Yann', 100000004);
+
+        $this->playreal->AddRecord(3, 'Eric', null);
+    }
+
 
 }
