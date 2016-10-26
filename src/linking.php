@@ -173,12 +173,14 @@ function RunWorkflow($playreal, $playfab, $device_id, $playreal_user_id, $conten
             //-- Case #1: none is linked: we need to marry them
             $playfab_user = $playfab->LinkCustomId($playfab_user['id'], $playreal_user['id']);
             $playreal_user = $playreal->LinkUser($playreal_user['id'], $playfab_user['id']);
-        } elseif ($other_playreal_user_id == null && $other_playfab_user_id == $playfab_user['id']) {
+        } elseif ($other_playreal_user_id == null && $other_playfab_user_id && $other_playfab_user_id == $playfab_user['id']) {
             //-- Case #2: Only the PlayReal account is pointing to the PlayFab account: fix the PlayFab account by adding the PlayReal link
             $playfab->UnlinkCustomId($playreal_user['id']); // Make sure the PlayReal account is not used by any other PlayFab account
             $playfab_user = $playfab->LinkCustomId($playfab_user['id'], $playreal_user['id']);
-        } elseif ($other_playreal_user_id == null && $other_playfab_user_id != $playfab_user['id']) {
+        } elseif (($other_playreal_user_id == null && $other_playfab_user_id && $other_playfab_user_id != $playfab_user['id']) ||
+            ($other_playreal_user_id == $playreal_user['id'] && $other_playfab_user_id && $other_playfab_user_id != $playfab_user['id'])) {
             //-- Case #3: The PlayReal account is pointing to ANOTHER PlayFab account: ask the user which PlayFab data she wants to keep
+            //-- Case #6: Inconsistency: the PlayFab account points to the current PlayReal account but the PlayReal account points to ANOTHER PlayFab account: same as #3 and correct the links
             if ($content_preference == 'local') {
                 //-- Player chooses "local content", i.e. the current PlayFab account
                 $playfab->UnlinkCustomId($playreal_user['id']); // Make sure the PlayReal account is not used by any other PlayFab account
@@ -197,30 +199,27 @@ function RunWorkflow($playreal, $playfab, $device_id, $playreal_user_id, $conten
                     $playfab_user = $playfab->LinkCustomId($playfab_user['id'], $playreal_user['id']); // Link the the right PlayReal account
                 }
             }
-        } elseif ($other_playreal_user_id == $playreal_user['id'] && $other_playfab_user_id == null) {
+        } elseif ($other_playreal_user_id && $other_playreal_user_id == $playreal_user['id'] && $other_playfab_user_id == null) {
             //-- Case #4: PlayReal link is missing: fix the PlayReal account by adding the PlayFab link
             $playreal->UnlinkUser($playfab_user['id']);     // Make sure the PlayFab account is not used by any other PlayReal account
             $playreal_user = $playreal->LinkUser($playreal_user['id'], $playfab_user['id']);
-        } elseif ($other_playreal_user_id == $playreal_user['id'] && $other_playfab_user_id == $playfab_user['id']) {
+        } elseif ($other_playreal_user_id && $other_playreal_user_id == $playreal_user['id'] && $other_playfab_user_id && $other_playfab_user_id == $playfab_user['id']) {
             //-- Case #5: Both point to each other: nothing to do, we're GOOD
-        } elseif ($other_playreal_user_id == $playreal_user['id'] && $other_playfab_user_id != $playfab_user['id']) {
-            //-- Case #6: Inconsistency: the PlayFab account points to the current PlayReal account but the PlayReal account points to ANOTHER PlayFab account: We should switch to that PlayFab account ("PlayReal wins") and correct the links
-            $playfab->UnlinkCustomId($playreal_user['id']); // Make sure the PlayReal account is not used by any other PlayFab account
-            $playfab_user = $playfab->Login($other_playfab_user_id);
-            $playfab_user = $playfab->LinkCustomId($playfab_user['id'], $playreal_user['id']); // Link the two accounts together
-        } elseif ($other_playreal_user_id != $playreal_user['id'] && $other_playfab_user_id == null) {
+        } elseif ($other_playreal_user_id && $other_playreal_user_id != $playreal_user['id'] && $other_playfab_user_id == null) {
             //-- Case #7: orphan PlayReal account: the PlayFab account should win
             $playreal->UnlinkUser($playfab_user['id']);     // Make sure the PlayFab account is not used by any other PlayReal account
             $playreal_user = $playreal->LinkUser($other_playreal_user_id, $playfab_user['id']);   // Link the two accounts together
-        } elseif ($other_playreal_user_id != $playreal_user['id'] && $other_playfab_user_id == $playfab_user['id']) {
+        } elseif ($other_playreal_user_id && $other_playreal_user_id != $playreal_user['id'] && $other_playfab_user_id && $other_playfab_user_id == $playfab_user['id']) {
             //-- Case #8: Inconsistency:
             $playfab->UnlinkCustomId($other_playreal_user_id); // Make sure the other PlayReal account is not used by any other PlayFab account
             $playfab_user = $playfab->LinkCustomId($playfab_user['id'], $playreal_user['id']);
-        } elseif ($other_playreal_user_id != $playreal_user['id'] && $other_playfab_user_id != $playfab_user['id']) {
+        } elseif ($other_playreal_user_id && $other_playreal_user_id != $playreal_user['id'] && $other_playfab_user_id && $other_playfab_user_id != $playfab_user['id']) {
             //-- Case #9: each is linked to another: the PlayReal account should win
-            $playfab_user = $playfab->Login($other_playfab_user_id);
-            $playfab->UnlinkCustomId($playreal_user['id']); // Make sure the current PlayReal account is not used by any other PlayFab account
-            $playfab_user = $playfab->LinkCustomId($playfab_user['id'], $playreal_user['id']);  // Make sure it is linked to the PlayReal account
+            if ($content_preference == 'local') {
+                $playreal_user = $playreal->Login($other_playreal_user_id);
+            }else {
+                $playfab_user = $playfab->Login($other_playfab_user_id);
+            }
         }
     } elseif ($playfab_user && $playreal_user == null) {
         //-- No PlayReal user => find one or use the SSO
