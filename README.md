@@ -46,7 +46,7 @@ make test
 The Legal Part
 ==============
 
-Copyright 2016 Days of Wonder &amps; Asmodee Digital
+Copyright 2016 Days of Wonder &amp; Asmodee Digital
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use these files except in compliance with the License.
